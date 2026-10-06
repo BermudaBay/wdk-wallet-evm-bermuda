@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globa
 
 import { BrowserProvider, JsonRpcProvider } from 'ethers'
 
+import { ProviderRequiredError, ValueError } from '@tetherto/wdk-wallet'
 import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
 import WalletManagerBermuda, { WalletAccountBermuda } from '../../index.js'
 
@@ -74,19 +75,19 @@ describe('WalletManagerBermuda', () => {
       const wallet = new WalletManagerBermuda(SEED_PHRASE)
 
       await expect(wallet.getBermudaAccount())
-        .rejects.toThrow('Missing provider')
+        .rejects.toThrow(ProviderRequiredError)
 
       wallet.dispose()
     })
 
     test('should throw if the Bermuda account index is a negative number', async () => {
       await expect(wallet.getBermudaAccount(0, -1))
-        .rejects.toThrow()
+        .rejects.toThrow(ValueError)
     })
 
     test('should throw if the Ethereum account index is a negative number', async () => {
       await expect(wallet.getBermudaAccount(-1, 0))
-        .rejects.toThrow()
+        .rejects.toThrow(ValueError)
     })
   })
 
@@ -167,7 +168,7 @@ describe('WalletManagerBermuda', () => {
       const wallet = new WalletManagerBermuda(SEED_PHRASE)
 
       await expect(wallet.getFeeRates())
-        .rejects.toThrow('The wallet must be connected to a provider to get fee rates.')
+        .rejects.toThrow(ProviderRequiredError)
     })
   })
 })

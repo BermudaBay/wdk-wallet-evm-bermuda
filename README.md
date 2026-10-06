@@ -67,7 +67,8 @@ const seedPhrase = 'test only example nut use this real life secret phrase must 
 const wallet = new WalletManagerBermuda(seedPhrase, {
   // Option 1: Using RPC URL
   provider: 'https://eth-mainnet.g.alchemy.com/v2/your-api-key', // or any EVM RPC endpoint
-  transferMaxFee: 100000000000000 // Optional: Maximum fee in wei
+  transactionMaxFee: 100000000000000, // Optional: maximum network fee (in wei) of EVM transactions, Bermuda deposits included
+  transferMaxFee: 100000000000000 // Optional: maximum network fee (in wei) of EVM token transfers
 })
 
 // OR
@@ -75,7 +76,7 @@ const wallet = new WalletManagerBermuda(seedPhrase, {
 // Option 2: Using EIP-1193 provider (e.g., from browser wallet)
 const wallet2 = new WalletManagerBermuda(seedPhrase, {
   provider: window.ethereum, // EIP-1193 provider
-  transferMaxFee: 100000000000000 // Optional: Maximum fee in wei
+  transactionMaxFee: 100000000000000 // Optional: maximum network fee (in wei) of EVM transactions, Bermuda deposits included
 })
 
 // Get a full access Ethereum account
@@ -137,6 +138,21 @@ const txHash = await account.withdraw({ token: '0x...', amount: 1n, to: '0x...' 
 console.log('Transaction hash:', txHash)
 ```
 
+## 💸 Fees
+
+`transactionMaxFee` and `transferMaxFee` (both in wei) are enforced by the underlying `@tetherto/wdk-wallet-evm` accounts, so they only cap the network fees the wallet pays itself:
+
+| Operation | Fees | Capped by |
+|-----------|------|-----------|
+| EVM `sendTransaction()` | Network fee | `transactionMaxFee` |
+| EVM `transfer()` | Network fee | `transferMaxFee` |
+| Bermuda `deposit()` | Network fee of the deposit, and of the approval sent first for the wrapped native token | `transactionMaxFee` |
+| | Protocol deposit fee, if the pool charges one, in the deposited token | Not capped |
+| Bermuda `transfer()` | Relay fee, only if `options.relayFee` is set, in the transferred token | Not capped |
+| Bermuda `withdraw()` | Protocol withdrawal fee and, if `options.relayFee` is set, relay fee, in the withdrawn token | Not capped |
+
+Shielded transfers and withdrawals are submitted by a relayer, so **neither cap applies to them**: their fees are paid out of the shielded balance, in the token being moved. No relay fee is charged unless you set `relayFee` (together with `relayer`) in their options, so the relay fee is always the one you chose.
+
 ## 🌐 Supported Networks
 
 - **Plasma testnet**
@@ -148,7 +164,7 @@ console.log('Transaction hash:', txHash)
 - **Provider Security**: Use trusted RPC endpoints and consider running your own node for production
 - **Transaction Validation**: Always validate transaction details before signing
 - **Memory Cleanup**: Use the `dispose()` method to clear private keys from memory when done
-- **Fee Limits**: Set `transferMaxFee` in config to prevent excessive transaction fees
+- **Fee Limits**: Set `transactionMaxFee` and `transferMaxFee` to cap the network fees of EVM transactions (Bermuda deposits included) and EVM token transfers. They do not cap the fees of shielded transfers and withdrawals; see [Fees](#-fees)
 - **Gas Estimation**: Always estimate gas before sending transactions
 - **EIP-1559**: Consider using EIP-1559 fee model for better gas price estimation
 - **Contract Interactions**: Verify contract addresses and token decimals before transfers

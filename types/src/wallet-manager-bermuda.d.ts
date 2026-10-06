@@ -10,6 +10,16 @@
 /**
  * The configuration of a Bermuda wallet: the configuration of an evm wallet, plus the Bermuda specific options.
  *
+ * The fee caps of the evm configuration are enforced by the evm accounts, so they only bound network fees the wallet
+ * pays itself, in weis:
+ * - `transferMaxFee` caps the token transfers of the evm accounts (`WalletAccountEvm#transfer`).
+ * - `transactionMaxFee` caps the transactions they send (`WalletAccountEvm#sendTransaction`), which include the
+ *   deposits of Bermuda accounts and the approvals sent before depositing the wrapped native token.
+ *
+ * Neither caps the shielded transfers and withdrawals of Bermuda accounts: a relayer submits those, and their relay
+ * and protocol fees are paid out of the shielded balance, in the token moved. Nor do they cap a protocol deposit fee,
+ * paid in the deposited token.
+ *
  * @typedef {EvmWalletConfig & BermudaConfig} BermudaWalletConfig
  */
 export default class WalletManagerBermuda extends WalletManagerEvm {
@@ -95,6 +105,16 @@ export type BermudaConfig = {
 };
 /**
  * The configuration of a Bermuda wallet: the configuration of an evm wallet, plus the Bermuda specific options.
+ *
+ * The fee caps of the evm configuration are enforced by the evm accounts, so they only bound network fees the wallet
+ * pays itself, in weis:
+ * - `transferMaxFee` caps the token transfers of the evm accounts (`WalletAccountEvm#transfer`).
+ * - `transactionMaxFee` caps the transactions they send (`WalletAccountEvm#sendTransaction`), which include the
+ *   deposits of Bermuda accounts and the approvals sent before depositing the wrapped native token.
+ *
+ * Neither caps the shielded transfers and withdrawals of Bermuda accounts: a relayer submits those, and their relay
+ * and protocol fees are paid out of the shielded balance, in the token moved. Nor do they cap a protocol deposit fee,
+ * paid in the deposited token.
  */
 export type BermudaWalletConfig = EvmWalletConfig & BermudaConfig;
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm';

@@ -301,13 +301,30 @@ describe('WalletAccountBermuda', () => {
     expect(params.to).toBe('0xrecipient')
   })
 
-  test('disposes both account secrets', () => {
+  test('erases the bermuda secrets on dispose', () => {
     const secretKey = bermudaKeyPair.x25519.secretKey
+
+    expect(account.disposed).toBe(false)
 
     account.dispose()
 
-    expect(ethereumWallet.dispose).toHaveBeenCalledTimes(1)
+    expect(account.disposed).toBe(true)
     expect(bermudaKeyPair.privkey).toBeNull()
     expect(secretKey).toEqual(new Uint8Array(3))
+  })
+
+  // The ethereum account is owned by the wallet manager, and every Bermuda
+  // account derived from the same BIP-44 index shares it.
+  test('leaves the ethereum account alone on dispose', () => {
+    account.dispose()
+
+    expect(ethereumWallet.dispose).not.toHaveBeenCalled()
+  })
+
+  test('can be disposed more than once', () => {
+    account.dispose()
+
+    expect(() => account.dispose()).not.toThrow()
+    expect(account.disposed).toBe(true)
   })
 })

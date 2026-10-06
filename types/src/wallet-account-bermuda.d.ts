@@ -72,6 +72,8 @@ export default class WalletAccountBermuda {
      * @type {BermudaKeyPair}
      */
     protected _bermudaKeyPair: BermudaKeyPair;
+    /** @private */
+    private _disposed;
     /**
      * Get the Bermuda address.
      *
@@ -143,7 +145,16 @@ export default class WalletAccountBermuda {
      */
     withdraw(params: BermudaWithdrawParams, options?: BermudaWithdrawOptions): Promise<string>;
     /**
-     * Disposes the wallet account, erasing the private key from the memory.
+     * True if the account has been disposed.
+     *
+     * @type {boolean}
+     */
+    get disposed(): boolean;
+    /**
+     * Disposes the wallet account, erasing the Bermuda private keys from the memory.
+     *
+     * The master Ethereum account is left untouched: it belongs to the wallet manager (or to whoever passed it to the
+     * constructor), and other Bermuda accounts derived from it may still be using it.
      */
     dispose(): void;
 }

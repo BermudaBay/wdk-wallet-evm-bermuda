@@ -366,7 +366,7 @@ describe('WalletAccountBermuda against a plasma-testnet fork', () => {
   })
 
   describe('dispose', () => {
-    test('erases both the Ethereum and the Bermuda key material', async () => {
+    test('erases the Bermuda key material but not the Ethereum account it shares', async () => {
       const seed = hexlify(ethereumAccount.keyPair.privateKey)
 
       const disposable = new WalletAccountBermuda(
@@ -381,9 +381,17 @@ describe('WalletAccountBermuda against a plasma-testnet fork', () => {
 
       disposable.dispose()
 
+      expect(disposable.disposed).toBe(true)
       expect(disposable._bermudaKeyPair.privkey).toBeNull()
       expect(x25519.every(byte => byte === 0)).toBe(true)
-      expect(disposable._ethereumWallet.keyPair.privateKey).toBeNull()
+
+      // The Ethereum account belongs to the wallet manager, which keeps handing it
+      // out, and other Bermuda accounts derived from it still sign with it.
+      const ethereumWallet = await wallet.getAccountByPath("0'/0/9")
+
+      expect(ethereumWallet).toBe(disposable._ethereumWallet)
+      expect(ethereumWallet.keyPair.privateKey).not.toBeNull()
+      await expect(ethereumWallet.sign('still usable')).resolves.toMatch(/^0x[0-9a-f]{130}$/)
     }, OPERATION_TIMEOUT)
   })
 })

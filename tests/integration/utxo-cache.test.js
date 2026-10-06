@@ -27,7 +27,7 @@ describe('utxo cache persistence', () => {
 
   beforeAll(async () => {
     fork = await startFork()
-    directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wdk-wallet-bermuda-'))
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wdk-wallet-evm-bermuda-'))
   }, SCAN_TIMEOUT)
 
   afterAll(async () => {

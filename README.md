@@ -46,10 +46,10 @@ To install the `@bermuda/wdk-wallet-evm-bermuda` package, follow these instructi
 You can install it using npm:
 
 ```bash
-npm i bermudabay/wdk-wallet-bermuda
+npm i bermudabay/wdk-wallet-evm-bermuda
 ```
 
-The package is not on the npm registry yet, so it is installed from its GitHub repository (`bermudabay/wdk-wallet-bermuda`) and imported as `@bermuda/wdk-wallet-evm-bermuda`.
+The package is not on the npm registry yet, so it is installed from its GitHub repository (`bermudabay/wdk-wallet-evm-bermuda`) and imported as `@bermuda/wdk-wallet-evm-bermuda`.
 
 ## 🚀 Quick Start
 

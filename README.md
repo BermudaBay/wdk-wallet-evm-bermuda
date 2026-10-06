@@ -173,6 +173,10 @@ Shielded transfers and withdrawals are submitted by a relayer, so **neither cap 
 |---------|----------|------------|-------|--------------|
 | Plasma testnet | 9746 | `https://testnet-rpc.plasma.to` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0xfa3193AD6DEEcaF7D5586d40808E80ad2Ca5A007` |
 
+## 🖥️ Supported Runtimes
+
+The package runs on Node.js. [Bare](https://github.com/holepunchto/bare) is not supported yet, so the package has no `bare` entry point: the zero-knowledge prover the Bermuda SDK depends on, `@aztec/bb.js`, cannot be loaded by Bare. With Bare v1.34.1, importing the package fails on Node.js APIs that Bare's compatibility layer (`bare-node-runtime`) does not provide: `finished` from `stream/promises` and, with that one shimmed, `threadId` from `worker_threads`.
+
 ## 🔒 Security Considerations
 
 - **Seed Phrase Security**: Always store your seed phrase securely and never share it

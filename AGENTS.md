@@ -1,10 +1,10 @@
 # Agent Guide
 
-This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It follows strict coding conventions and tooling standards to ensure consistency, reliability, and cross-platform compatibility (Node.js and Bare runtime).
+This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It follows strict coding conventions and tooling standards to ensure consistency, reliability, and compatibility with Node.js.
 
 ## Project Overview
 - **Architecture:** Modular architecture with clear separation between Core, Wallet managers, and Protocols.
-- **Runtime:** Supports both Node.js and Bare runtime.
+- **Runtime:** Node.js. Bare is not supported yet: the Bermuda SDK's prover (`@aztec/bb.js`) cannot be loaded by Bare, so the package ships no `bare` entry point. Do not add one back without a test proving that the package loads under Bare.
 
 ## Tech Stack & Tooling
 - **Language:** JavaScript (ES2015+).

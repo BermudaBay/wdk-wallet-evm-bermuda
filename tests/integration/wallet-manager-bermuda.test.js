@@ -171,4 +171,34 @@ describe('WalletManagerBermuda', () => {
         .rejects.toThrow(ProviderRequiredError)
     })
   })
+
+  describe('dispose', () => {
+    test('should erase the key material of the Bermuda accounts and of their Ethereum accounts', async () => {
+      const bermudaAccounts = [
+        await wallet.getBermudaAccount(0, 0),
+        await wallet.getBermudaAccount(0, 1)
+      ]
+
+      const secretKeys = bermudaAccounts.map(account => account._bermudaKeyPair.x25519.secretKey)
+
+      const ethereumAccount = await wallet.getAccount(0)
+
+      for (const secretKey of secretKeys) {
+        expect(secretKey.some(byte => byte !== 0)).toBe(true)
+      }
+
+      wallet.dispose()
+
+      for (const account of bermudaAccounts) {
+        expect(account.disposed).toBe(true)
+        expect(account._bermudaKeyPair.privkey).toBeNull()
+      }
+
+      for (const secretKey of secretKeys) {
+        expect(secretKey.every(byte => byte === 0)).toBe(true)
+      }
+
+      expect(ethereumAccount.keyPair.privateKey).toBeNull()
+    })
+  })
 })

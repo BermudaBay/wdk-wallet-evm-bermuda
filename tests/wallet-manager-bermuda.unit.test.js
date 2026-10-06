@@ -2,7 +2,7 @@ import * as ethers from 'ethers'
 
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals'
 
-import { ProviderRequiredError, ValueError, WdkError } from '@tetherto/wdk-wallet'
+import WalletManager, { ProviderRequiredError, ValueError, WdkError } from '@tetherto/wdk-wallet'
 
 // The sibling suite drives the manager through a real Hardhat node and the
 // real Bermuda SDK. The `utxoCache` overrides cannot be exercised that way:
@@ -29,6 +29,7 @@ jest.unstable_mockModule('ethers', () => ({
 }))
 
 const { WalletAccountEvm } = await import('@tetherto/wdk-wallet-evm')
+const { SeedSignerEvm } = await import('@tetherto/wdk-wallet-evm/signers')
 
 const { default: WalletManagerBermuda } = await import('../src/wallet-manager-bermuda.js')
 const { default: WalletAccountBermuda } = await import('../src/wallet-account-bermuda.js')
@@ -371,5 +372,159 @@ describe('WalletManagerBermuda dispose', () => {
     expect(ethereumAccount).toBe(first._ethereumWallet)
     expect(ethereumAccount.keyPair.privateKey).not.toBeNull()
     await expect(ethereumAccount.sign('still usable')).resolves.toMatch(/^0x[0-9a-f]{130}$/)
+  })
+
+  test('returns the same bermuda account for the same indices', async () => {
+    const first = await wallet.getBermudaAccount(0, 0)
+    const second = await wallet.getBermudaAccount(0, 0)
+
+    expect(second).toBe(first)
+    expect(initBermudaSdk).toHaveBeenCalledTimes(1)
+  })
+
+  test('derives a bermuda account only once for concurrent requests', async () => {
+    const [first, second] = await Promise.all([
+      wallet.getBermudaAccount(0, 0),
+      wallet.getBermudaAccount(0, 0)
+    ])
+
+    expect(second).toBe(first)
+    expect(bermudaSdk.account).toHaveBeenCalledTimes(1)
+  })
+
+  test('derives a fresh bermuda account once the cached one is disposed', async () => {
+    const first = await wallet.getBermudaAccount(0, 0)
+
+    first.dispose()
+
+    const second = await wallet.getBermudaAccount(0, 0)
+
+    expect(second).not.toBe(first)
+    expect(second.disposed).toBe(false)
+  })
+
+  test('disposes the bermuda accounts along with the evm accounts', async () => {
+    const accounts = [
+      await wallet.getBermudaAccount(0, 0),
+      await wallet.getBermudaAccount(0, 1),
+      await wallet.getBermudaAccount(1, 0)
+    ]
+
+    const keyPairs = accounts.map(account => account._bermudaKeyPair)
+
+    const ethereumAccounts = [await wallet.getAccount(0), await wallet.getAccount(1)]
+
+    wallet.dispose()
+
+    expect(wallet.disposed).toBe(true)
+
+    for (const account of accounts) {
+      expect(account.disposed).toBe(true)
+    }
+
+    for (const keyPair of keyPairs) {
+      expect(keyPair.privkey).toBeNull()
+      expect(keyPair.x25519.secretKey).toEqual(new Uint8Array(3))
+    }
+
+    for (const ethereumAccount of ethereumAccounts) {
+      expect(ethereumAccount.keyPair.privateKey).toBeNull()
+    }
+  })
+
+  test('can be disposed more than once', () => {
+    wallet.dispose()
+
+    expect(() => wallet.dispose()).not.toThrow()
+    expect(wallet.disposed).toBe(true)
+  })
+
+  test('rejects requests for bermuda accounts once disposed', async () => {
+    wallet.dispose()
+
+    const error = await wallet.getBermudaAccount().catch(error => error)
+
+    expect(error).toBeInstanceOf(WdkError)
+    expect(error.message).toBe('The wallet has been disposed.')
+
+    expect(initBermudaSdk).not.toHaveBeenCalled()
+  })
+
+  test('erases a bermuda account whose derivation outlasted the wallet', async () => {
+    let resolveKeyPair
+
+    bermudaSdk.account.mockImplementation(() => new Promise(resolve => {
+      resolveKeyPair = resolve
+    }))
+
+    const pending = wallet.getBermudaAccount(0, 0)
+
+    for (let tick = 0; tick < 100 && !resolveKeyPair; tick++) {
+      await new Promise(resolve => setImmediate(resolve))
+    }
+
+    wallet.dispose()
+
+    const keyPair = createBermudaKeyPair(0)
+
+    resolveKeyPair(keyPair)
+
+    await expect(pending).rejects.toThrow('The wallet has been disposed.')
+
+    expect(keyPair.privkey).toBeNull()
+    expect(keyPair.x25519.secretKey).toEqual(new Uint8Array(3))
+  })
+
+  test('erases the root key derived from the seed', () => {
+    const dispose = jest.spyOn(wallet._defaultSigner, 'dispose')
+
+    wallet.dispose()
+
+    expect(dispose).toHaveBeenCalled()
+    expect(wallet._defaultSigner).toBeUndefined()
+  })
+
+  // From @tetherto/wdk-wallet 1.0.0-beta.22 on, the base wallet manager only
+  // disposes its accounts and leaves every signer alone.
+  describe('with a base wallet manager that leaves the signers alone', () => {
+    let baseDispose
+
+    beforeEach(() => {
+      baseDispose = jest.spyOn(WalletManager.prototype, 'dispose').mockImplementation(function () {
+        for (const account of Object.values(this._accounts)) {
+          account.dispose()
+        }
+
+        this._accounts = {}
+      })
+    })
+
+    afterEach(() => {
+      baseDispose.mockRestore()
+    })
+
+    test('still erases the root key derived from the seed', () => {
+      const dispose = jest.spyOn(wallet._defaultSigner, 'dispose')
+
+      wallet.dispose()
+
+      expect(dispose).toHaveBeenCalledTimes(1)
+      expect(wallet._defaultSigner).toBeUndefined()
+    })
+
+    test('leaves a signer passed in by the caller to the caller', () => {
+      const signer = new SeedSignerEvm(SEED_PHRASE)
+
+      const dispose = jest.spyOn(signer, 'dispose')
+
+      const walletWithSigner = new WalletManagerBermuda(signer, { provider: EIP1193_PROVIDER })
+
+      walletWithSigner.dispose()
+
+      expect(dispose).not.toHaveBeenCalled()
+
+      dispose.mockRestore()
+      signer.dispose()
+    })
   })
 })

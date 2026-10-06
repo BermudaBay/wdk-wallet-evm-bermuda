@@ -6,6 +6,8 @@ labels: []
 assignees: []
 ---
 
+<!-- Do not report security vulnerabilities here: email security@bermudabay.xyz instead (see SECURITY.md). -->
+
 ## I'm submitting a...
 
 - [ ] bug report

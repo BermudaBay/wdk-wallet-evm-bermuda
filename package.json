@@ -16,7 +16,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/bermudabay/wdk-wallet-bermuda.git"
+    "url": "git://github.com/bermudabay/wdk-wallet-evm-bermuda.git"
   },
   "main": "index.js",
   "type": "module",

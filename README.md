@@ -241,8 +241,12 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## 🛡️ Reporting Security Issues
+
+Please do not report security vulnerabilities through public GitHub issues. Email [security@bermudabay.xyz](mailto:security@bermudabay.xyz) instead; see [SECURITY.md](SECURITY.md) for what to include and how disclosure works.
+
 ## 🆘 Support
 
-For support, please open an issue on the GitHub repository.
+For support, please open an issue on the GitHub repository. Security issues are the exception: report those privately, as described above.
 
 ---

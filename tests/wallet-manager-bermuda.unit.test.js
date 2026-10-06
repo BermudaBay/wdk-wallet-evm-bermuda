@@ -243,6 +243,11 @@ describe('WalletManagerBermuda constructor', () => {
 
     wallet.dispose()
   })
+
+  test('rejects an invalid seed phrase with a ValueError', () => {
+    expect(() => new WalletManagerBermuda('not a valid seed phrase')).toThrow(ValueError)
+    expect(() => new WalletManagerBermuda('not a valid seed phrase')).toThrow('Invalid seed phrase.')
+  })
 })
 
 describe('WalletManagerBermuda getAccount', () => {

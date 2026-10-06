@@ -28,6 +28,14 @@ jobs:
       # depend on the .npmrc resolution policy.
       - uses: tetherto/oss-actions/node-base@v1
       - run: npm run lint
+      # types/ is committed, so regenerate it and fail on any difference: a JSDoc
+      # change must not ship without its declarations, and a broken typedef import
+      # must not silently collapse an exported type to `any` again. The
+      # intent-to-add makes newly generated declaration files show up in the diff.
+      - run: npm run build:types
+      - run: |
+          git add --intent-to-add types/
+          git diff --exit-code -- types/
   test:
     strategy:
       matrix:

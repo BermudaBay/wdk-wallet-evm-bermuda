@@ -15,76 +15,56 @@
 
 'use strict'
 
-import WalletManager from '@tetherto/wdk-wallet'
-import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
+import { ValueError } from '@tetherto/wdk-wallet'
+import WalletManagerEvm from '@tetherto/wdk-wallet-evm'
 
-import { BrowserProvider, JsonRpcProvider, hexlify } from 'ethers'
+import { hexlify } from 'ethers'
 
 import WalletAccountBermuda from './wallet-account-bermuda.js'
 import { chainIdToName } from './utils.js'
 import initBermudaSdk from '@bermuda/sdk'
 
-/** @typedef {import('ethers').Provider} Provider */
-
-/** @typedef {import("@tetherto/wdk-wallet").FeeRates} FeeRates */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 
 /**  @typedef {import('@bermuda/sdk').ISdk} BermudaSdk */
 
 /**
- * @typedef {Object} BermudaWalletConfig
- * @property {string | Eip1193Provider} [provider] - The url of the rpc provider, or an instance of a class that implements eip-1193.
- * @property {number | bigint} [transferMaxFee] - The maximum fee amount for transfer operations.
+ * @typedef {Object} BermudaConfig
  * @property {string} [utxoCache] - Filepath for persisting UTXO cache across sessions.
+ * @property {string} [commitmentEventsCache] - Filepath for persisting the commitment events cache across sessions (default: derived from the utxo cache's filepath).
  * @property {Object} [fs] - node:fs or equivalent.
  */
 
-export default class WalletManagerBermuda extends WalletManager {
-  /**
-   * Multiplier for normal fee rate calculations (in %).
-   *
-   * @protected
-   * @type {bigint}
-   */
-  static _FEE_RATE_NORMAL_MULTIPLIER = 110n
+/**
+ * The configuration of a Bermuda wallet: the configuration of an evm wallet, plus the Bermuda specific options.
+ *
+ * @typedef {EvmWalletConfig & BermudaConfig} BermudaWalletConfig
+ */
 
-  /**
-   * Multiplier for fast fee rate calculations (in %).
-   *
-   * @protected
-   * @type {bigint}
-   */
-  static _FEE_RATE_FAST_MULTIPLIER = 200n
-
+export default class WalletManagerBermuda extends WalletManagerEvm {
   /**
    * Creates a new Bermuda wallet manager for EVM blockchains.
    *
    * @param {string | Uint8Array} seed The wallet's [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki) seed phrase
    * @param {BermudaWalletConfig} [config] - The configuration object.
+   * @throws {ValueError} If the seed phrase is invalid.
    */
   constructor (seed, config = {}) {
+    // The evm wallet manager rejects an invalid seed phrase with a plain error, so
+    // it is checked here first to keep failing with the WDK one.
+    if (typeof seed === 'string' && !WalletManagerBermuda.isValidSeedPhrase(seed)) {
+      throw new ValueError('Invalid seed phrase.')
+    }
+
     super(seed, config)
 
     /**
-     * The evm wallet configuration.
+     * The Bermuda wallet configuration.
      *
      * @protected
      * @type {BermudaWalletConfig}
      */
     this._config = config
-
-    const { provider } = config
-
-    if (provider) {
-      /**
-       * An ethers provider to interact with a node of the blockchain.
-       *
-       * @protected
-       * @type {Provider | undefined}
-       */
-      this._provider = typeof provider === 'string'
-        ? new JsonRpcProvider(provider)
-        : new BrowserProvider(provider)
-    }
   }
 
   /**
@@ -110,57 +90,5 @@ export default class WalletManagerBermuda extends WalletManager {
     const ethereumWallet = await this.getAccountByPath(`0'/0/${bip44AccountIndex}`)
     const bermudaAccount = await bermuda.account({ seed: hexlify(ethereumWallet.keyPair.privateKey), id: bermudaAccountIndex })
     return new WalletAccountBermuda(bermuda, ethereumWallet, bermudaAccount)
-  }
-
-  /**
-   * Returns the wallet account at a specific index (see [BIP-44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)).
-   *
-   * @example
-   * // Returns the account with derivation path m/44'/60'/0'/0/1
-   * const account = await wallet.getAccount(1);
-   * @param {number} [index] - The index of the account to get (default: 0).
-   * @returns {Promise<WalletAccountEvm>} The account.
-   */
-  async getAccount (index = 0) {
-    return await this.getAccountByPath(`0'/0/${index}`)
-  }
-
-  /**
-   * Returns the wallet account at a specific BIP-44 derivation path.
-   *
-   * @example
-   * // Returns the account with derivation path m/44'/60'/0'/0/1
-   * const account = await wallet.getAccountByPath("0'/0/1");
-   * @param {string} path - The derivation path (e.g. "0'/0/0").
-   * @returns {Promise<WalletAccountEvm>} The account.
-   */
-  async getAccountByPath (path) {
-    if (!this._accounts[path]) {
-      const account = new WalletAccountEvm(this.seed, path, this._config)
-
-      this._accounts[path] = account
-    }
-
-    return this._accounts[path]
-  }
-
-  /**
-   * Returns the current fee rates.
-   *
-   * @returns {Promise<FeeRates>} The fee rates (in weis).
-   */
-  async getFeeRates () {
-    if (!this._provider) {
-      throw new Error('The wallet must be connected to a provider to get fee rates.')
-    }
-
-    const data = await this._provider.getFeeData()
-
-    const feeRate = data.maxFeePerGas || data.gasPrice
-
-    return {
-      normal: feeRate * WalletManagerBermuda._FEE_RATE_NORMAL_MULTIPLIER / 100n,
-      fast: feeRate * WalletManagerBermuda._FEE_RATE_FAST_MULTIPLIER / 100n
-    }
   }
 }

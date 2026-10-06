@@ -21,10 +21,7 @@
 
 A simple and secure package to manage Bermuda accounts for EVM-compatible blockchains.
 
-This package provides a clean API for both of
-- creating Bermuda accounts from BIP-44 wallets, and performing deposits to, transfers within, and withdrawals from a Bermuda shielded pool
-
-- creating, managing, and utlizing BIP-44 accounts à la [`@tetherto/wdk-wallet-evm`](https://github.com/tetherto/wdk-wallet-evm)
+This package extends [`@tetherto/wdk-wallet-evm`](https://github.com/tetherto/wdk-wallet-evm) with Bermuda shielded accounts. `WalletManagerBermuda` is a `WalletManagerEvm`, so it creates and manages BIP-44 accounts exactly like `@tetherto/wdk-wallet-evm` does, and adds `getBermudaAccount()` on top: Bermuda accounts derived from those BIP-44 accounts, which deposit to, transfer within, and withdraw from a Bermuda shielded pool.
 
 ## 🔍 About WDK
 
@@ -34,7 +31,7 @@ For detailed documentation about the complete WDK ecosystem, visit [docs.wallet.
 
 ## 🌟 Features
 
-- **WDK-compatible wallet management**: Use the familiar `getAccount()` and `getAccountByPath()` APIs from `@tetherto/wdk-wallet-evm`
+- **Built on `@tetherto/wdk-wallet-evm`**: `WalletManagerBermuda` extends `WalletManagerEvm`, so `getAccount()`, `getAccountByPath()`, `getFeeRates()` and the provider options work exactly as they do there
 - **BIP-39 and BIP-44 account derivation**: Derive standard EVM accounts from a mnemonic seed
 - **Deterministic Bermuda accounts**: Derive shielded accounts from an EVM account with `getBermudaAccount()`
 - **Shielded deposits**: Deposit funds into the Bermuda shielded pool

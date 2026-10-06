@@ -4,7 +4,7 @@ import { ContractFactory } from 'ethers'
 
 import { describe, expect, test, beforeEach, afterEach } from '@jest/globals'
 
-import WalletManagerEvm from '../../index.js'
+import WalletManagerBermuda from '../../index.js'
 
 import TestToken from './../artifacts/TestToken.json' with { type: 'json' }
 
@@ -47,7 +47,7 @@ async function deployTestToken () {
   return contract
 }
 
-describe('@tetherto/wdk-wallet-bermuda', () => {
+describe('@bermuda/wdk-wallet-evm-bermuda', () => {
   let testToken,
     wallet,
     snapshot
@@ -74,7 +74,7 @@ describe('@tetherto/wdk-wallet-bermuda', () => {
       await sendTestTokensTo(account.address, INITIAL_TOKEN_BALANCE)
     }
 
-    wallet = new WalletManagerEvm(SEED_PHRASE, {
+    wallet = new WalletManagerBermuda(SEED_PHRASE, {
       provider: hre.provider
     })
   })
@@ -290,7 +290,7 @@ describe('@tetherto/wdk-wallet-bermuda', () => {
   })
 
   test('should create a wallet with a low transfer max fee, derive an account, try to transfer some tokens and gracefully fail', async () => {
-    const wallet = new WalletManagerEvm(SEED_PHRASE, {
+    const wallet = new WalletManagerBermuda(SEED_PHRASE, {
       provider: hre.provider,
       transferMaxFee: 0
     })

@@ -1,14 +1,18 @@
 {
-  "name": "@bermuda/wdk-wallet-bermuda",
+  "name": "@bermuda/wdk-wallet-evm-bermuda",
   "version": "0.1.8",
-  "description": "A simple package to manage BIP-32 wallets for evm blockchains.",
+  "description": "Extends @tetherto/wdk-wallet-evm with Bermuda shielded accounts: private deposits, transfers and withdrawals for EVM wallets.",
   "keywords": [
     "wdk",
     "wallet",
     "bip-32",
-    "ethereum"
+    "ethereum",
+    "evm",
+    "bermuda",
+    "privacy",
+    "shielded"
   ],
-  "author": "Tether",
+  "author": "Bermuda",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

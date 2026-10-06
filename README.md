@@ -1,4 +1,4 @@
-# @bermuda/wdk-wallet-bermuda
+# @bermuda/wdk-wallet-evm-bermuda
 
 <a href="https://docs.wdk.tether.io">
   <picture>
@@ -26,8 +26,6 @@ This package provides a clean API for both of
 
 - creating, managing, and utlizing BIP-44 accounts à la [`@tetherto/wdk-wallet-evm`](https://github.com/tetherto/wdk-wallet-evm)
 
-Since `WalletManagerBermuda` exposes the same `constructor`, `getAccount` and `getAccountByPath` interfaces as [`@tetherto/wdk-wallet-evm`](https://github.com/tetherto/wdk-wallet-evm) our **`wdk-wallet-bermuda` is a direct drop-in for [`@tetherto/wdk-wallet-evm`](https://github.com/tetherto/wdk-wallet-evm)**.
-
 ## 🔍 About WDK
 
 This module is part of the [**WDK (Wallet Development Kit)**](https://wallet.tether.io/) project, which empowers developers to build secure, non-custodial wallets with unified blockchain access, stateless architecture, and complete user control.
@@ -46,7 +44,7 @@ For detailed documentation about the complete WDK ecosystem, visit [docs.wallet.
 
 ## ⬇️ Installation
 
-To install the `@bermuda/wdk-wallet-bermuda` package, follow these instructions:
+To install the `@bermuda/wdk-wallet-evm-bermuda` package, follow these instructions:
 
 You can install it using npm:
 
@@ -54,14 +52,16 @@ You can install it using npm:
 npm i bermudabay/wdk-wallet-bermuda
 ```
 
+The package is not on the npm registry yet, so it is installed from its GitHub repository (`bermudabay/wdk-wallet-bermuda`) and imported as `@bermuda/wdk-wallet-evm-bermuda`.
+
 ## 🚀 Quick Start
 
-### Importing from `@bermuda/wdk-wallet-bermuda`
+### Importing from `@bermuda/wdk-wallet-evm-bermuda`
 
 ### Creating a New Wallet
 
 ```javascript
-import WalletManagerBermuda, { WalletAccountBermuda } from '@bermuda/wdk-wallet-bermuda'
+import WalletManagerBermuda, { WalletAccountBermuda } from '@bermuda/wdk-wallet-evm-bermuda'
 
 // Use a BIP-39 seed phrase (replace with your own secure phrase)
 const seedPhrase = 'test only example nut use this real life secret phrase must random'
@@ -91,7 +91,7 @@ const bermudaAccount = await wallet.getBermudaAccount()
 ### Managing Multiple Accounts
 
 ```javascript
-import WalletManagerEvm from '@bermuda/wdk-wallet-bermuda'
+import WalletManagerBermuda from '@bermuda/wdk-wallet-evm-bermuda'
 
 // Assume wallet is already created
 // The first parameter is the BIP-44 account index while the second is the Bermuda account index.

@@ -1,6 +1,6 @@
 import * as ethers from 'ethers'
 
-import { beforeEach, describe, expect, jest, test } from '@jest/globals'
+import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals'
 
 import { ProviderRequiredError, ValueError, WdkError } from '@tetherto/wdk-wallet'
 
@@ -37,8 +37,18 @@ const SEED_PHRASE = 'cook voyage document eight skate token alien guide drink un
 const UTXO_CACHE = '/tmp/bermuda/utxos.json'
 const EIP1193_PROVIDER = { request: jest.fn() }
 
+// Stands in for the SDK's key pair: just the address and the two secrets that
+// disposing a Bermuda account erases.
+function createBermudaKeyPair (id) {
+  return {
+    address: jest.fn(() => `0xbermuda${id}`),
+    privkey: BigInt(id + 1),
+    x25519: { secretKey: new Uint8Array([1, 2, 3]) }
+  }
+}
+
 describe('WalletManagerBermuda sdk overrides', () => {
-  let bermudaKeyPair, fs
+  let fs
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -47,10 +57,8 @@ describe('WalletManagerBermuda sdk overrides', () => {
       getNetwork: jest.fn(async () => ({ chainId: 31337n }))
     }
 
-    bermudaKeyPair = { address: jest.fn(() => '0xbermuda') }
-
     bermudaSdk = {
-      account: jest.fn(async () => bermudaKeyPair)
+      account: jest.fn(async ({ id }) => createBermudaKeyPair(id))
     }
 
     fs = { readFileSync: jest.fn(), writeFileSync: jest.fn() }
@@ -324,5 +332,44 @@ describe('WalletManagerBermuda getFeeRates', () => {
     expect(error.message).toBe('The wallet must be connected to a provider to get fee rates.')
 
     wallet.dispose()
+  })
+})
+
+describe('WalletManagerBermuda dispose', () => {
+  let wallet
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+
+    provider = {
+      getNetwork: jest.fn(async () => ({ chainId: 31337n }))
+    }
+
+    bermudaSdk = {
+      account: jest.fn(async ({ id }) => createBermudaKeyPair(id))
+    }
+
+    wallet = new WalletManagerBermuda(SEED_PHRASE, { provider: EIP1193_PROVIDER })
+  })
+
+  afterEach(() => {
+    wallet.dispose()
+  })
+
+  test('keeps the shared ethereum account usable when a bermuda account is disposed', async () => {
+    const first = await wallet.getBermudaAccount(0, 0)
+    const second = await wallet.getBermudaAccount(0, 1)
+
+    expect(second._ethereumWallet).toBe(first._ethereumWallet)
+
+    first.dispose()
+
+    expect(second.disposed).toBe(false)
+
+    const ethereumAccount = await wallet.getAccount(0)
+
+    expect(ethereumAccount).toBe(first._ethereumWallet)
+    expect(ethereumAccount.keyPair.privateKey).not.toBeNull()
+    await expect(ethereumAccount.sign('still usable')).resolves.toMatch(/^0x[0-9a-f]{130}$/)
   })
 })

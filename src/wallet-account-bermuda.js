@@ -101,6 +101,9 @@ export default class WalletAccountBermuda {
      * @type {BermudaKeyPair}
      */
     this._bermudaKeyPair = bermudaKeyPair
+
+    /** @private */
+    this._disposed = false
   }
 
   /**
@@ -280,11 +283,26 @@ export default class WalletAccountBermuda {
   }
 
   /**
-   * Disposes the wallet account, erasing the private key from the memory.
+   * True if the account has been disposed.
+   *
+   * @type {boolean}
+   */
+  get disposed () {
+    return this._disposed
+  }
+
+  /**
+   * Disposes the wallet account, erasing the Bermuda private keys from the memory.
+   *
+   * The master Ethereum account is left untouched: it belongs to the wallet manager (or to whoever passed it to the
+   * constructor), and other Bermuda accounts derived from it may still be using it.
    */
   dispose () {
-    this._ethereumWallet.dispose()
+    if (this._disposed) return
+
     this._bermudaKeyPair.privkey = null
     this._bermudaKeyPair.x25519.secretKey.fill(0)
+
+    this._disposed = true
   }
 }

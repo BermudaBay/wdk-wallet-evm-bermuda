@@ -2,13 +2,12 @@ import * as ethers from 'ethers'
 
 import { beforeEach, describe, expect, jest, test } from '@jest/globals'
 
-import { WalletAccountEvm } from '@tetherto/wdk-wallet-evm'
-
 // The sibling suite drives the manager through a real Hardhat node and the
 // real Bermuda SDK. The `utxoCache` overrides cannot be exercised that way:
 // `initBermudaSdk` has to be observable, and a real SDK handed a cache path
 // would touch the filesystem. Mocks must be installed before the module under
-// test is loaded, hence the separate file.
+// test is loaded, hence the separate file. That includes
+// @tetherto/wdk-wallet-evm: its WalletManagerEvm builds the provider.
 
 let bermudaSdk
 
@@ -26,6 +25,8 @@ jest.unstable_mockModule('ethers', () => ({
   ...ethers,
   BrowserProvider
 }))
+
+const { WalletAccountEvm } = await import('@tetherto/wdk-wallet-evm')
 
 const { default: WalletManagerBermuda } = await import('../src/wallet-manager-bermuda.js')
 const { default: WalletAccountBermuda } = await import('../src/wallet-account-bermuda.js')

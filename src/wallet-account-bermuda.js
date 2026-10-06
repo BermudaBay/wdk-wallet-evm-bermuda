@@ -29,10 +29,10 @@ import { Contract } from 'ethers'
 /** @typedef {import('@tetherto/wdk-wallet').TransferResult} TransferResult */
 /** @typedef {import('@tetherto/wdk-wallet-evm').WalletAccountEvm} WalletAccountEvm */
 
-/** @typedef {import('./wallet-account-read-only-evm.js').TypedData} TypedData */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmTransaction} EvmTransaction */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmTransferOptions} EvmTransferOptions */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmWalletConfig} EvmWalletConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm').TypedData} TypedData */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransaction} EvmTransaction */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransferOptions} EvmTransferOptions */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 
 /**  @typedef {import('@bermuda/sdk').ISdk} BermudaSdk */
 /** @typedef {import('@bermuda/sdk').KeyPair} BermudaKeyPair */
@@ -87,10 +87,10 @@ export default class WalletAccountBermuda {
     this._bermuda = bermudaSdk
 
     /**
-     * The account.
+     * The master Ethereum account.
      *
      * @protected
-     * @type {HDNodeWallet}
+     * @type {WalletAccountEvm}
      */
     this._ethereumWallet = ethereumWallet
 
@@ -182,9 +182,9 @@ export default class WalletAccountBermuda {
    * The deposit recipient defaults to the default Bermuda account owned by
    * given seed.
    *
-   * @param {BermudaDepositParams} params
-   * @param {BermudaDepositOptions} options
-   * @returns Transaction hash
+   * @param {BermudaDepositParams} params - The deposit's parameters.
+   * @param {BermudaDepositOptions} [options] - The deposit's options.
+   * @returns {Promise<string>} The transaction hash.
    */
   async deposit (params, options = {}) {
     params.signer = this._getEthersSigner()
@@ -248,9 +248,9 @@ export default class WalletAccountBermuda {
   /**
    * Transfer shielded funds.
    *
-   * @param {BermudaTransferParams} params
-   * @param {BermudaTransferOptions} options
-   * @returns Transaction hash
+   * @param {BermudaTransferParams} params - The transfer's parameters.
+   * @param {BermudaTransferOptions} [options] - The transfer's options.
+   * @returns {Promise<string>} The transaction hash.
    */
   async transfer (params, options = {}) {
     params.spender = this._bermudaKeyPair
@@ -266,9 +266,9 @@ export default class WalletAccountBermuda {
    * The withdrawal recipient defaults to the associated public Ethereum
    * address (index 0) of the given seed.
    *
-   * @param {BermudaWithdrawParams} params
-   * @param {BermudaWithdrawOptions} options
-   * @returns Transaction hash
+   * @param {BermudaWithdrawParams} params - The withdrawal's parameters.
+   * @param {BermudaWithdrawOptions} [options] - The withdrawal's options.
+   * @returns {Promise<string>} The transaction hash.
    */
   async withdraw (params, options = {}) {
     params.spender = this._bermudaKeyPair

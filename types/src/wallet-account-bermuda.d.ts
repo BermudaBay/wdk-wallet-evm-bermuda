@@ -7,10 +7,10 @@
 /** @typedef {import('@tetherto/wdk-wallet').TransactionResult} TransactionResult */
 /** @typedef {import('@tetherto/wdk-wallet').TransferResult} TransferResult */
 /** @typedef {import('@tetherto/wdk-wallet-evm').WalletAccountEvm} WalletAccountEvm */
-/** @typedef {import('./wallet-account-read-only-evm.js').TypedData} TypedData */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmTransaction} EvmTransaction */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmTransferOptions} EvmTransferOptions */
-/** @typedef {import('./wallet-account-read-only-evm.js').EvmWalletConfig} EvmWalletConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm').TypedData} TypedData */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransaction} EvmTransaction */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransferOptions} EvmTransferOptions */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 /**  @typedef {import('@bermuda/sdk').ISdk} BermudaSdk */
 /** @typedef {import('@bermuda/sdk').KeyPair} BermudaKeyPair */
 /** @typedef {import('@bermuda/sdk').IDepositOptions} BermudaDepositOptions */
@@ -59,12 +59,12 @@ export default class WalletAccountBermuda {
      */
     protected _bermuda: BermudaSdk;
     /**
-     * The account.
+     * The master Ethereum account.
      *
      * @protected
-     * @type {HDNodeWallet}
+     * @type {WalletAccountEvm}
      */
-    protected _ethereumWallet: HDNodeWallet;
+    protected _ethereumWallet: WalletAccountEvm;
     /**
      * The Bermuda key pair.
      *
@@ -120,17 +120,17 @@ export default class WalletAccountBermuda {
      * The deposit recipient defaults to the default Bermuda account owned by
      * given seed.
      *
-     * @param {BermudaDepositParams} params
-     * @param {BermudaDepositOptions} options
-     * @returns Transaction hash
+     * @param {BermudaDepositParams} params - The deposit's parameters.
+     * @param {BermudaDepositOptions} [options] - The deposit's options.
+     * @returns {Promise<string>} The transaction hash.
      */
     deposit(params: BermudaDepositParams, options?: BermudaDepositOptions): Promise<string>;
     /**
      * Transfer shielded funds.
      *
-     * @param {BermudaTransferParams} params
-     * @param {BermudaTransferOptions} options
-     * @returns Transaction hash
+     * @param {BermudaTransferParams} params - The transfer's parameters.
+     * @param {BermudaTransferOptions} [options] - The transfer's options.
+     * @returns {Promise<string>} The transaction hash.
      */
     transfer(params: BermudaTransferParams, options?: BermudaTransferOptions): Promise<string>;
     /**
@@ -139,9 +139,9 @@ export default class WalletAccountBermuda {
      * The withdrawal recipient defaults to the associated public Ethereum
      * address (index 0) of the given seed.
      *
-     * @param {BermudaWithdrawParams} params
-     * @param {BermudaWithdrawOptions} options
-     * @returns Transaction hash
+     * @param {BermudaWithdrawParams} params - The withdrawal's parameters.
+     * @param {BermudaWithdrawOptions} [options] - The withdrawal's options.
+     * @returns {Promise<string>} The transaction hash.
      */
     withdraw(params: BermudaWithdrawParams, options?: BermudaWithdrawOptions): Promise<string>;
     /**
@@ -167,10 +167,10 @@ export type KeyPair = import("@tetherto/wdk-wallet").KeyPair;
 export type TransactionResult = import("@tetherto/wdk-wallet").TransactionResult;
 export type TransferResult = import("@tetherto/wdk-wallet").TransferResult;
 export type WalletAccountEvm = import("@tetherto/wdk-wallet-evm").WalletAccountEvm;
-export type TypedData = any;
-export type EvmTransaction = any;
-export type EvmTransferOptions = any;
-export type EvmWalletConfig = any;
+export type TypedData = import("@tetherto/wdk-wallet-evm").TypedData;
+export type EvmTransaction = import("@tetherto/wdk-wallet-evm").EvmTransaction;
+export type EvmTransferOptions = import("@tetherto/wdk-wallet-evm").EvmTransferOptions;
+export type EvmWalletConfig = import("@tetherto/wdk-wallet-evm").EvmWalletConfig;
 export type BermudaSdk = import("@bermuda/sdk").ISdk;
 export type BermudaKeyPair = import("@bermuda/sdk").KeyPair;
 export type BermudaDepositOptions = import("@bermuda/sdk").IDepositOptions;

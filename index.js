@@ -26,11 +26,11 @@
 /** @typedef {import('@tetherto/wdk-wallet').TransactionResult} TransactionResult */
 /** @typedef {import('@tetherto/wdk-wallet').TransferResult} TransferResult */
 
-/** @typedef {import('./src/wallet-account-read-only-evm.js').TypedData} TypedData */
-/** @typedef {import('./src/wallet-account-read-only-evm.js').DelegationInfo} DelegationInfo */
-/** @typedef {import('./src/wallet-account-read-only-evm.js').EvmTransaction} EvmTransaction */
-/** @typedef {import('./src/wallet-account-read-only-evm.js').EvmTransferOptions} EvmTransferOptions */
-/** @typedef {import('./src/wallet-account-read-only-evm.js').EvmWalletConfig} EvmWalletConfig */
+/** @typedef {import('@tetherto/wdk-wallet-evm').TypedData} TypedData */
+/** @typedef {import('@tetherto/wdk-wallet-evm').DelegationInfo} DelegationInfo */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransaction} EvmTransaction */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmTransferOptions} EvmTransferOptions */
+/** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 
 /** @typedef {import('@bermuda/sdk').ISdk} BermudaSdk */
 /** @typedef {import('@bermuda/sdk').KeyPair} BermudaKeyPair */

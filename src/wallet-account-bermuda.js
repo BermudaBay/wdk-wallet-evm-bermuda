@@ -179,8 +179,11 @@ export default class WalletAccountBermuda {
   /**
    * Shield funds.
    *
-   * The deposit recipient defaults to the default Bermuda account owned by
-   * given seed.
+   * The deposit recipient defaults to this Bermuda account.
+   *
+   * The deposit is sent by the master Ethereum account, so the wallet's `transactionMaxFee` caps its network fee, and
+   * that of the approval sent first for the wrapped native token. A protocol deposit fee, if the pool charges one, is
+   * paid in the deposited token and is not capped.
    *
    * @param {BermudaDepositParams} params - The deposit's parameters.
    * @param {BermudaDepositOptions} [options] - The deposit's options.
@@ -248,6 +251,10 @@ export default class WalletAccountBermuda {
   /**
    * Transfer shielded funds.
    *
+   * The transfer is submitted by a relayer, so neither the wallet's `transferMaxFee` nor its `transactionMaxFee`
+   * applies. A relay fee is only charged if `options.relayFee` is set (together with `options.relayer`), and is paid
+   * out of the shielded balance, in the transferred token.
+   *
    * @param {BermudaTransferParams} params - The transfer's parameters.
    * @param {BermudaTransferOptions} [options] - The transfer's options.
    * @returns {Promise<string>} The transaction hash.
@@ -263,8 +270,12 @@ export default class WalletAccountBermuda {
   /**
    * Unshield funds.
    *
-   * The withdrawal recipient defaults to the associated public Ethereum
-   * address (index 0) of the given seed.
+   * The withdrawal recipient defaults to the address of the master Ethereum
+   * account.
+   *
+   * The withdrawal is submitted by a relayer, so neither the wallet's `transferMaxFee` nor its `transactionMaxFee`
+   * applies. Its fees are paid out of the shielded balance, in the withdrawn token: the pool's protocol withdrawal fee,
+   * plus a relay fee if `options.relayFee` is set (together with `options.relayer`).
    *
    * @param {BermudaWithdrawParams} params - The withdrawal's parameters.
    * @param {BermudaWithdrawOptions} [options] - The withdrawal's options.

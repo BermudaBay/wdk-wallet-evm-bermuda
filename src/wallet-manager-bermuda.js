@@ -15,7 +15,7 @@
 
 'use strict'
 
-import { ProviderRequiredError, ValueError } from '@tetherto/wdk-wallet'
+import { ProviderRequiredError, ValueError, WdkError } from '@tetherto/wdk-wallet'
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm'
 
 import { hexlify } from 'ethers'
@@ -67,17 +67,49 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
      * @type {BermudaWalletConfig}
      */
     this._config = config
+
+    /**
+     * A map between '<bip-44 account index>/<bermuda account index>' keys and the Bermuda accounts derived so far. The
+     * {@link dispose} method disposes all of them, along with the evm accounts.
+     *
+     * @protected
+     * @type {Record<string, WalletAccountBermuda>}
+     */
+    this._bermudaAccounts = {}
+
+    /**
+     * The derivations of Bermuda accounts still in flight, by the same keys, so concurrent requests share one.
+     *
+     * @private
+     * @type {Record<string, Promise<WalletAccountBermuda>>}
+     */
+    this._pendingBermudaAccounts = {}
+
+    /**
+     * True if the default signer was created here from the seed, and so is the wallet's to dispose.
+     *
+     * @private
+     * @type {boolean}
+     */
+    this._ownsDefaultSigner = typeof seed === 'string' || seed instanceof Uint8Array
+
+    // Not `_disposed`: newer versions of the base wallet manager declare a private
+    // property by that name.
+    /** @private */
+    this._bermudaDisposed = false
   }
 
   /**
    * Returns the Bermuda account, derived with the indicated EVM wallet's private key as seed.
    *
-   * The indices allow for a vast array of Bermuda sub accounts all controlled by given EVM seed wallet.
+   * The indices allow for a vast array of Bermuda sub accounts all controlled by given EVM seed wallet. Repeated calls
+   * with the same indices return the same account, until it is disposed.
    *
    * @param {number} [bip44AccountIndex] - The index of the Ethereum account to use as master of the returned Bermuda account (default: 0).
    * @param {number} [bermudaAccountIndex] - The index of the Bermuda account to derive (default: 0).
    * @returns {Promise<WalletAccountBermuda>} The Bermuda account.
    * @throws {ValueError} If an index is not a non-negative integer, or if the provider's chain is not supported.
+   * @throws {WdkError} If the wallet has been disposed.
    * @throws {ProviderRequiredError} If the wallet is not connected to a provider.
    */
   async getBermudaAccount (bip44AccountIndex = 0, bermudaAccountIndex = 0) {
@@ -91,21 +123,28 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
       }
     }
 
+    if (this._bermudaDisposed) {
+      throw new WdkError('The wallet has been disposed.')
+    }
+
     if (!this._provider) {
       throw new ProviderRequiredError('The wallet must be connected to a provider to get Bermuda accounts.')
     }
 
-    const chainId = await this._provider.getNetwork().then(network => network.chainId)
-    const sdkOverrides = {}
-    if (this._config.utxoCache) {
-      sdkOverrides.utxoCache = this._config.utxoCache
-      sdkOverrides.commitmentEventsCache = this._config.commitmentEventsCache || this._config.utxoCache.replace(/\.json$/, '-commitment-events.json')
-      sdkOverrides.fs = this._config.fs
+    const key = `${bip44AccountIndex}/${bermudaAccountIndex}`
+
+    const account = this._bermudaAccounts[key]
+
+    if (account && !account.disposed) {
+      return account
     }
-    const bermuda = initBermudaSdk(chainIdToName(chainId), sdkOverrides)
-    const ethereumWallet = await this.getAccountByPath(`0'/0/${bip44AccountIndex}`)
-    const bermudaAccount = await bermuda.account({ seed: hexlify(ethereumWallet.keyPair.privateKey), id: bermudaAccountIndex })
-    return new WalletAccountBermuda(bermuda, ethereumWallet, bermudaAccount)
+
+    this._pendingBermudaAccounts[key] ??= this._deriveBermudaAccount(key, bip44AccountIndex, bermudaAccountIndex)
+      .finally(() => {
+        delete this._pendingBermudaAccounts[key]
+      })
+
+    return await this._pendingBermudaAccounts[key]
   }
 
   /**
@@ -120,5 +159,75 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
     }
 
     return await super.getFeeRates()
+  }
+
+  /**
+   * True if the wallet has been disposed.
+   *
+   * @type {boolean}
+   */
+  get disposed () {
+    return this._bermudaDisposed
+  }
+
+  /**
+   * Disposes all the wallet accounts, the Bermuda accounts included, erasing their private keys from the memory.
+   */
+  dispose () {
+    if (this._bermudaDisposed) return
+
+    super.dispose()
+
+    for (const account of Object.values(this._bermudaAccounts)) {
+      account.dispose()
+    }
+
+    this._bermudaAccounts = {}
+
+    // Newer versions of the base wallet manager no longer dispose the default
+    // signer. The one created from the seed holds the root key, so it is erased
+    // here regardless; a signer passed in by the caller remains theirs.
+    if (this._ownsDefaultSigner) {
+      this._defaultSigner?.dispose()
+
+      this._defaultSigner = undefined
+    }
+
+    this._bermudaDisposed = true
+  }
+
+  /**
+   * Derives a Bermuda account and caches it under the given key.
+   *
+   * @private
+   * @param {string} key - The account's key in the cache.
+   * @param {number} bip44AccountIndex - The index of the Ethereum account to use as master of the Bermuda account.
+   * @param {number} bermudaAccountIndex - The index of the Bermuda account to derive.
+   * @returns {Promise<WalletAccountBermuda>} The Bermuda account.
+   */
+  async _deriveBermudaAccount (key, bip44AccountIndex, bermudaAccountIndex) {
+    const chainId = await this._provider.getNetwork().then(network => network.chainId)
+    const sdkOverrides = {}
+    if (this._config.utxoCache) {
+      sdkOverrides.utxoCache = this._config.utxoCache
+      sdkOverrides.commitmentEventsCache = this._config.commitmentEventsCache || this._config.utxoCache.replace(/\.json$/, '-commitment-events.json')
+      sdkOverrides.fs = this._config.fs
+    }
+    const bermuda = initBermudaSdk(chainIdToName(chainId), sdkOverrides)
+    const ethereumWallet = await this.getAccountByPath(`0'/0/${bip44AccountIndex}`)
+    const bermudaKeyPair = await bermuda.account({ seed: hexlify(ethereumWallet.keyPair.privateKey), id: bermudaAccountIndex })
+    const account = new WalletAccountBermuda(bermuda, ethereumWallet, bermudaKeyPair)
+
+    // The wallet may have been disposed while the account was being derived: the
+    // account must then neither be handed out nor outlive the wallet's secrets.
+    if (this._bermudaDisposed) {
+      account.dispose()
+
+      throw new WdkError('The wallet has been disposed.')
+    }
+
+    this._bermudaAccounts[key] = account
+
+    return account
   }
 }

@@ -17,7 +17,7 @@
   </picture>
 </a>
 
-**Note**: This package is currently in beta. Only supported network is Plasma testnet,
+**Note**: This package is currently in beta. The only supported network is Plasma testnet.
 
 A simple and secure package to manage Bermuda accounts for EVM-compatible blockchains.
 
@@ -66,7 +66,7 @@ const seedPhrase = 'test only example nut use this real life secret phrase must 
 // Create wallet manager with provider config
 const wallet = new WalletManagerBermuda(seedPhrase, {
   // Option 1: Using RPC URL
-  provider: 'https://eth-mainnet.g.alchemy.com/v2/your-api-key', // or any EVM RPC endpoint
+  provider: 'https://testnet-rpc.plasma.to', // Plasma testnet's public RPC endpoint, or any other one for Plasma testnet
   transactionMaxFee: 100000000000000, // Optional: maximum network fee (in wei) of EVM transactions, Bermuda deposits included
   transferMaxFee: 100000000000000 // Optional: maximum network fee (in wei) of EVM token transfers
 })
@@ -75,7 +75,7 @@ const wallet = new WalletManagerBermuda(seedPhrase, {
 
 // Option 2: Using EIP-1193 provider (e.g., from browser wallet)
 const wallet2 = new WalletManagerBermuda(seedPhrase, {
-  provider: window.ethereum, // EIP-1193 provider
+  provider: window.ethereum, // EIP-1193 provider, connected to Plasma testnet (chain id 9746)
   transactionMaxFee: 100000000000000 // Optional: maximum network fee (in wei) of EVM transactions, Bermuda deposits included
 })
 
@@ -108,16 +108,28 @@ console.log('Account 1 address:', address1)
 For accounts where you have the seed phrase and full access:
 
 ```javascript
-// Get shielded ERC20 token balance
-const token = '0x...'; // ERC20 contract address
-const balance = await account.getTokenBalance(token);
-console.log('Token balance:', balance);
+// USDT0 on Plasma testnet (6 decimals)
+const USDT0 = '0x502012b361AebCE43b26Ec812B74D9a51dB4D412'
+
+// Get the shielded USDT0 balance (in base units)
+const balance = await account.getTokenBalance(USDT0)
+console.log('Shielded USDT0 balance:', balance)
 ```
 
 ### Deposit into Bermuda
 
+USDT0 does not support EIP-2612 permits, so the Bermuda pool needs an allowance before a deposit: approve it with the master Ethereum account, and wait for the approval to be mined. The wrapped native token (WXPL) is approved automatically.
+
 ```javascript
-const txHash = await account.deposit({ token: '0x...', amount: 1n })
+const BERMUDA_POOL = '0xfa3193AD6DEEcaF7D5586d40808E80ad2Ca5A007' // Bermuda pool on Plasma testnet
+
+const ethereumAccount = await wallet.getAccount(0)
+
+const { hash } = await ethereumAccount.approve({ token: USDT0, spender: BERMUDA_POOL, amount: 1_000_000n })
+await ethereumAccount.waitForTransaction(hash)
+
+// Shield 1 USDT0 into the Bermuda account
+const txHash = await account.deposit({ token: USDT0, amount: 1_000_000n })
 
 console.log('Transaction hash:', txHash)
 ```
@@ -125,7 +137,8 @@ console.log('Transaction hash:', txHash)
 ### Transfer within Bermuda
 
 ```javascript
-const txHash = await account.transfer({ token: '0x...', amount: 1n, to: '0x...' })
+// Send 1 shielded USDT0 to another Bermuda account, here the second one derived above
+const txHash = await account.transfer({ token: USDT0, amount: 1_000_000n, to: account1.getAddress() })
 
 console.log('Transaction hash:', txHash)
 ```
@@ -133,7 +146,8 @@ console.log('Transaction hash:', txHash)
 ### Withdraw from Bermuda
 
 ```javascript
-const txHash = await account.withdraw({ token: '0x...', amount: 1n, to: '0x...' })
+// Unshield 1 USDT0 to a public address (defaults to the master Ethereum account's address)
+const txHash = await account.withdraw({ token: USDT0, amount: 1_000_000n, to: '0x...' })
 
 console.log('Transaction hash:', txHash)
 ```
@@ -155,7 +169,9 @@ Shielded transfers and withdrawals are submitted by a relayer, so **neither cap 
 
 ## 🌐 Supported Networks
 
-- **Plasma testnet**
+| Network | Chain ID | Public RPC | USDT0 | Bermuda pool |
+|---------|----------|------------|-------|--------------|
+| Plasma testnet | 9746 | `https://testnet-rpc.plasma.to` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0xfa3193AD6DEEcaF7D5586d40808E80ad2Ca5A007` |
 
 ## 🔒 Security Considerations
 

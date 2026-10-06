@@ -2,6 +2,8 @@ import * as ethers from 'ethers'
 
 import { beforeEach, describe, expect, jest, test } from '@jest/globals'
 
+import { ProviderRequiredError, ValueError, WdkError } from '@tetherto/wdk-wallet'
+
 // The sibling suite drives the manager through a real Hardhat node and the
 // real Bermuda SDK. The `utxoCache` overrides cannot be exercised that way:
 // `initBermudaSdk` has to be observable, and a real SDK handed a cache path
@@ -138,11 +140,33 @@ describe('WalletManagerBermuda sdk overrides', () => {
     wallet.dispose()
   })
 
-  test('rejects a negative bermuda account index', async () => {
+  test.each([
+    [0, -1],
+    [-1, 0]
+  ])('rejects the negative account indices %p and %p', async (bip44AccountIndex, bermudaAccountIndex) => {
     const wallet = createWallet()
 
-    await expect(wallet.getBermudaAccount(0, -1))
-      .rejects.toThrow('Account index must not be negative')
+    const error = await wallet.getBermudaAccount(bip44AccountIndex, bermudaAccountIndex).catch(error => error)
+
+    expect(error).toBeInstanceOf(ValueError)
+    expect(error.message).toBe('Account index must not be negative.')
+
+    expect(initBermudaSdk).not.toHaveBeenCalled()
+
+    wallet.dispose()
+  })
+
+  test.each([
+    [1.5, 0],
+    [0, '1'],
+    [0, NaN]
+  ])('rejects the non-integer account indices %p and %p', async (bip44AccountIndex, bermudaAccountIndex) => {
+    const wallet = createWallet()
+
+    const error = await wallet.getBermudaAccount(bip44AccountIndex, bermudaAccountIndex).catch(error => error)
+
+    expect(error).toBeInstanceOf(ValueError)
+    expect(error.message).toBe('Account index must be an integer.')
 
     expect(initBermudaSdk).not.toHaveBeenCalled()
 
@@ -152,7 +176,12 @@ describe('WalletManagerBermuda sdk overrides', () => {
   test('rejects when the wallet has no provider', async () => {
     const wallet = new WalletManagerBermuda(SEED_PHRASE)
 
-    await expect(wallet.getBermudaAccount()).rejects.toThrow('Missing provider')
+    const error = await wallet.getBermudaAccount().catch(error => error)
+
+    // Hosts catch every wallet module's errors through the shared WDK base class.
+    expect(error).toBeInstanceOf(ProviderRequiredError)
+    expect(error).toBeInstanceOf(WdkError)
+    expect(error.message).toBe('The wallet must be connected to a provider to get Bermuda accounts.')
 
     wallet.dispose()
   })
@@ -289,8 +318,10 @@ describe('WalletManagerBermuda getFeeRates', () => {
   test('throws if the wallet is not connected to a provider', async () => {
     const wallet = new WalletManagerBermuda(SEED_PHRASE)
 
-    await expect(wallet.getFeeRates())
-      .rejects.toThrow('The wallet must be connected to a provider to get fee rates.')
+    const error = await wallet.getFeeRates().catch(error => error)
+
+    expect(error).toBeInstanceOf(ProviderRequiredError)
+    expect(error.message).toBe('The wallet must be connected to a provider to get fee rates.')
 
     wallet.dispose()
   })

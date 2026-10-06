@@ -2,6 +2,8 @@ import { network } from 'hardhat'
 
 import { afterAll, describe, expect, jest, test } from '@jest/globals'
 
+import { ValueError } from '@tetherto/wdk-wallet'
+
 import WalletManagerBermuda, { WalletAccountBermuda } from '../../index.js'
 
 // `getBermudaAccount` resolves the chain by asking the provider for its id and
@@ -94,7 +96,10 @@ describe('chain resolution through getBermudaAccount', () => {
   test('rejects a chain id the package does not map', async () => {
     const wallet = await walletOn(1)
 
-    await expect(wallet.getBermudaAccount()).rejects.toThrow('Unknown chain id')
+    const error = await wallet.getBermudaAccount().catch(error => error)
+
+    expect(error).toBeInstanceOf(ValueError)
+    expect(error.message).toBe('Unknown chain id: 1')
 
     wallet.dispose()
   })

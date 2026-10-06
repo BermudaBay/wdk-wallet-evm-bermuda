@@ -1,3 +1,4 @@
+/** @typedef {import('@tetherto/wdk-wallet').FeeRates} FeeRates */
 /** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 /**  @typedef {import('@bermuda/sdk').ISdk} BermudaSdk */
 /**
@@ -28,9 +29,12 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
      * @param {number} [bip44AccountIndex] - The index of the Ethereum account to use as master of the returned Bermuda account (default: 0).
      * @param {number} [bermudaAccountIndex] - The index of the Bermuda account to derive (default: 0).
      * @returns {Promise<WalletAccountBermuda>} The Bermuda account.
+     * @throws {ValueError} If an index is not a non-negative integer, or if the provider's chain is not supported.
+     * @throws {ProviderRequiredError} If the wallet is not connected to a provider.
      */
     getBermudaAccount(bip44AccountIndex?: number, bermudaAccountIndex?: number): Promise<WalletAccountBermuda>;
 }
+export type FeeRates = import("@tetherto/wdk-wallet").FeeRates;
 export type EvmWalletConfig = import("@tetherto/wdk-wallet-evm").EvmWalletConfig;
 export type BermudaSdk = import("@bermuda/sdk").ISdk;
 export type BermudaConfig = {

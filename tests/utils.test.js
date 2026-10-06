@@ -1,5 +1,7 @@
 import { describe, expect, test } from '@jest/globals'
 
+import { ValueError } from '@tetherto/wdk-wallet'
+
 import { chainIdToName } from '../src/utils.js'
 
 describe('chainIdToName', () => {
@@ -17,6 +19,7 @@ describe('chainIdToName', () => {
   })
 
   test('rejects an unknown chain ID', () => {
-    expect(() => chainIdToName(1)).toThrow('Unknown chain id')
+    expect(() => chainIdToName(1)).toThrow(ValueError)
+    expect(() => chainIdToName(1)).toThrow('Unknown chain id: 1')
   })
 })

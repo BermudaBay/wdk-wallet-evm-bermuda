@@ -15,7 +15,7 @@
 
 'use strict'
 
-import { ValueError } from '@tetherto/wdk-wallet'
+import { ProviderRequiredError, ValueError } from '@tetherto/wdk-wallet'
 import WalletManagerEvm from '@tetherto/wdk-wallet-evm'
 
 import { hexlify } from 'ethers'
@@ -23,6 +23,8 @@ import { hexlify } from 'ethers'
 import WalletAccountBermuda from './wallet-account-bermuda.js'
 import { chainIdToName } from './utils.js'
 import initBermudaSdk from '@bermuda/sdk'
+
+/** @typedef {import('@tetherto/wdk-wallet').FeeRates} FeeRates */
 
 /** @typedef {import('@tetherto/wdk-wallet-evm').EvmWalletConfig} EvmWalletConfig */
 
@@ -75,10 +77,24 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
    * @param {number} [bip44AccountIndex] - The index of the Ethereum account to use as master of the returned Bermuda account (default: 0).
    * @param {number} [bermudaAccountIndex] - The index of the Bermuda account to derive (default: 0).
    * @returns {Promise<WalletAccountBermuda>} The Bermuda account.
+   * @throws {ValueError} If an index is not a non-negative integer, or if the provider's chain is not supported.
+   * @throws {ProviderRequiredError} If the wallet is not connected to a provider.
    */
   async getBermudaAccount (bip44AccountIndex = 0, bermudaAccountIndex = 0) {
-    if (bermudaAccountIndex < 0) throw Error('Account index must not be negative')
-    if (!this._provider) throw Error('Missing provider')
+    for (const index of [bip44AccountIndex, bermudaAccountIndex]) {
+      if (!Number.isInteger(index)) {
+        throw new ValueError('Account index must be an integer.')
+      }
+
+      if (index < 0) {
+        throw new ValueError('Account index must not be negative.')
+      }
+    }
+
+    if (!this._provider) {
+      throw new ProviderRequiredError('The wallet must be connected to a provider to get Bermuda accounts.')
+    }
+
     const chainId = await this._provider.getNetwork().then(network => network.chainId)
     const sdkOverrides = {}
     if (this._config.utxoCache) {
@@ -90,5 +106,19 @@ export default class WalletManagerBermuda extends WalletManagerEvm {
     const ethereumWallet = await this.getAccountByPath(`0'/0/${bip44AccountIndex}`)
     const bermudaAccount = await bermuda.account({ seed: hexlify(ethereumWallet.keyPair.privateKey), id: bermudaAccountIndex })
     return new WalletAccountBermuda(bermuda, ethereumWallet, bermudaAccount)
+  }
+
+  /**
+   * Returns the current fee rates.
+   *
+   * @returns {Promise<FeeRates>} The fee rates (in weis).
+   * @throws {ProviderRequiredError} If the wallet is not connected to a provider.
+   */
+  async getFeeRates () {
+    if (!this._provider) {
+      throw new ProviderRequiredError('The wallet must be connected to a provider to get fee rates.')
+    }
+
+    return await super.getFeeRates()
   }
 }

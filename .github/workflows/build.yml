@@ -62,4 +62,31 @@ jobs:
       # the suite does not need them.
       - run: npm install -g npm@12
       - run: npm ci
+      # The integration suite includes tests/integration/bare.test.js, whose Bare
+      # process generates proofs with bb.js. bb.js downloads its CRS on first use;
+      # the tests keep it in node_modules/.cache/bb-crs, restored after `npm ci`.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: node_modules/.cache/bb-crs
+          key: bb-crs-${{ hashFiles('node_modules/@aztec/bb.js/package.json') }}
       - run: npm run test:coverage
+  bare:
+    runs-on: ubuntu-latest
+    name: Bare
+    steps:
+      # Set up like the test job, for the same reasons.
+      - uses: tetherto/oss-actions/node-base@v1
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version-file: .nvmrc
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install -g npm@12
+      - run: npm ci
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: node_modules/.cache/bb-crs
+          key: bb-crs-${{ hashFiles('node_modules/@aztec/bb.js/package.json') }}
+      # Loads the package under Node.js and Bare, from the checkout and from the
+      # packed tarball, derives the pinned account vectors and starts the prover.
+      # The shielded operations under Bare run in the test job above.
+      - run: npm run test:bare

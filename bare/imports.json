@@ -1,0 +1,18 @@
+{
+  "stream/promises": {
+    "bare": "@bermuda/wdk-wallet-evm-bermuda/bare/stream-promises",
+    "default": "stream/promises"
+  },
+  "node:stream/promises": {
+    "bare": "@bermuda/wdk-wallet-evm-bermuda/bare/stream-promises",
+    "default": "node:stream/promises"
+  },
+  "worker_threads": {
+    "bare": "@bermuda/wdk-wallet-evm-bermuda/bare/worker-threads",
+    "default": "worker_threads"
+  },
+  "node:worker_threads": {
+    "bare": "@bermuda/wdk-wallet-evm-bermuda/bare/worker-threads",
+    "default": "node:worker_threads"
+  }
+}

@@ -26,7 +26,8 @@
     "bare.js",
     "bare/",
     "src/",
-    "types/"
+    "types/",
+    "SECURITY.md"
   ],
   "devEngines": {
     "runtime": {

@@ -51,6 +51,14 @@ npm i bermudabay/wdk-wallet-evm-bermuda
 
 The package is not on the npm registry yet, so it is installed from its GitHub repository (`bermudabay/wdk-wallet-evm-bermuda`) and imported as `@bermuda/wdk-wallet-evm-bermuda`.
 
+npm 12 and later refuse git dependencies, such as this package, and URL dependencies, such as the Bermuda SDK it depends on, unless you allow them:
+
+```bash
+npm i bermudabay/wdk-wallet-evm-bermuda --allow-git=root --allow-remote=all
+```
+
+`allow-git=root` admits the git dependencies of your own project, which this package is one of. The SDK is a dependency of this package rather than of your project, so it needs `allow-remote=all`. Both settings can also go into your project's `.npmrc`.
+
 ## 🚀 Quick Start
 
 ### Importing from `@bermuda/wdk-wallet-evm-bermuda`
@@ -175,7 +183,22 @@ Shielded transfers and withdrawals are submitted by a relayer, so **neither cap 
 
 ## 🖥️ Supported Runtimes
 
-The package runs on Node.js. [Bare](https://github.com/holepunchto/bare) is not supported yet, so the package has no `bare` entry point: the zero-knowledge prover the Bermuda SDK depends on, `@aztec/bb.js`, cannot be loaded by Bare. With Bare v1.34.1, importing the package fails on Node.js APIs that Bare's compatibility layer (`bare-node-runtime`) does not provide: `finished` from `stream/promises` and, with that one shimmed, `threadId` from `worker_threads`.
+The package runs on Node.js and on [Bare](https://github.com/holepunchto/bare). Under Bare it is loaded through its `bare` entry point, `bare.js`, which sets up Bare's Node.js compatibility layer (`bare-node-runtime`) and fills the gaps that the Bermuda SDK's zero-knowledge prover, `@aztec/bb.js`, runs into on top of it:
+
+- `@aztec/bb.js` imports `finished` from `stream/promises` and `threadId` from `worker_threads`, which `bare-node-runtime` does not provide. The modules in [`bare/`](bare/) add them.
+- Two globals are patched, for the whole process. `TextDecoder` also accepts the labels of the `windows-1252` encoding, such as `ascii`, which `@aztec/bb.js` decodes the prover's output with. `WebAssembly.compile()` and `WebAssembly.instantiate()` keep Bare's event loop alive until they settle: Bare would otherwise exit while the prover is still being compiled.
+
+Tested with Bare 1.34.0 on macOS (arm64) and, in CI, on Linux (x64):
+
+- `npm run test:bare` loads the package under Node.js and Bare, from the checkout and from the packed tarball, derives EVM and Bermuda accounts against pinned vectors, and starts the prover.
+- The integration suite deposits, transfers and withdraws from a Bare process, with real proofs, against a fork of Plasma testnet (`tests/integration/bare.test.js`).
+
+Under Bare, keep in mind:
+
+- Proofs come from the WebAssembly backend of `@aztec/bb.js`, on a single thread, where Node.js uses the native one. On an Apple silicon Mac, a deposit took 13 seconds and a transfer or withdrawal 11, against roughly 10 on Node.js.
+- On first use, the prover downloads its CRS (about 38 MB, 105 MB once unpacked) into `~/.bb-crs`, or into the directory set in `CRS_PATH`.
+- Import `@bermuda/wdk-wallet-evm-bermuda` before anything else that loads `@bermuda/sdk` or `@aztec/bb.js`. Bare caches each module with the import map it was first loaded with, so modules loaded earlier would miss the fixes above.
+- WDK worklet bundles are not supported yet. A bundle builds, but fails to load: the Bermuda SDK loads its prover's dependencies up front, and those read their WebAssembly modules from disk as they load, which a bundle does not allow.
 
 ## 🔒 Security Considerations
 
@@ -235,7 +258,12 @@ npm run test:integration
 
 # Run only the integration suites with coverage
 npm run test:integration:coverage
+
+# Load the package under Node.js and Bare, from the checkout and packed
+npm run test:bare
 ```
+
+The integration suites include `tests/integration/bare.test.js`, which runs shielded operations under Bare.
 
 ## 📜 License
 

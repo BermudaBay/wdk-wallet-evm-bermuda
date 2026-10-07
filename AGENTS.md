@@ -1,10 +1,13 @@
 # Agent Guide
 
-This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It follows strict coding conventions and tooling standards to ensure consistency, reliability, and compatibility with Node.js.
+This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It follows strict coding conventions and tooling standards to ensure consistency, reliability, and cross-platform compatibility (Node.js and Bare runtime).
 
 ## Project Overview
 - **Architecture:** Modular architecture with clear separation between Core, Wallet managers, and Protocols.
-- **Runtime:** Node.js. Bare is not supported yet: the Bermuda SDK's prover (`@aztec/bb.js`) cannot be loaded by Bare, so the package ships no `bare` entry point. Do not add one back without a test proving that the package loads under Bare.
+- **Runtime:** Node.js and Bare. Bare loads `bare.js` (the `bare` export condition), which
+  adds what the Bermuda SDK's prover (`@aztec/bb.js`) needs beyond `bare-node-runtime`; see
+  [Bare](#bare) below. `npm run test:bare` and `tests/integration/bare.test.js` are the evidence
+  that it works: keep both passing. WDK worklet bundles are not supported yet (see README).
 
 ## Tech Stack & Tooling
 - **Language:** JavaScript (ES2015+).
@@ -14,7 +17,10 @@ This repository is part of the Tether WDK (Wallet Development Kit) ecosystem. It
 - **Linting:** `standard` (JavaScript Standard Style).
   - Command: `npm run lint` / `npm run lint:fix`
 - **Testing:** `jest` (configured with `experimental-vm-modules` for ESM support).
-  - Command: `npm test` (everything), `npm run test:integration` (integration only)
+  - Command: `npm test` (everything), `npm run test:integration` (integration only),
+    `npm run test:bare` (the package under Node.js and Bare, from the checkout and packed; a
+    plain script, `tests/bare/run.js`, not a Jest suite; needs network access to install the
+    packed package and, on first use, to download the prover's CRS)
   - Two categories, both gated at 90% by the single global threshold in `jest.config.js`:
     **unit** (directly under `tests/`, fully mocked) and **integration** (under
     `tests/integration/`, real nodes and the real SDK).
@@ -47,7 +53,8 @@ Source code must be strictly typed using JSDoc comments to support the `build:ty
 1.  **Install:** `npm ci` (prefer `ci` over `install` so the lockfile is honoured exactly)
 2.  **Lint:** `npm run lint`
 3.  **Test:** `npm test`
-4.  **Build Types:** `npm run build:types`
+4.  **Test under Bare:** `npm run test:bare`
+5.  **Build Types:** `npm run build:types`
 
 ### Troubleshooting
 
@@ -89,3 +96,28 @@ easy to break:
   leaves its next signed transaction reusing a spent nonce. The faucet key is repo-specific
   for the same reason: the well-known Hardhat dev keys have real transaction histories on
   public testnets, and a fork inherits their nonces.
+
+#### Bare
+`bare.js` and `bare/` make the package work under Bare; `tests/bare/` and
+`tests/integration/bare.test.js` prove it. Load-bearing and easy to break:
+- **Two import maps, two hops.** `bare.js` imports `bare/entry.js` with `bare-node-runtime`'s
+  map, and `bare/entry.js` imports `index.js` with `bare/imports.json`. Bare merges a module's
+  map into the one it inherited, so the whole graph sees `bare-node-runtime`'s mappings with
+  ours on top. Folding them into one hop would mean copying and maintaining its map.
+- **Map targets are package specifiers.** Bare resolves a mapped target from the module that
+  imports it (deep inside `@aztec/bb.js`), not from the map file, so `bare/imports.json` points
+  at `@bermuda/wdk-wallet-evm-bermuda/bare/*`, exported under a `bare` condition only. In this
+  checkout the package is not in `node_modules`, so the Bare tests first link it there
+  (`tests/bare/link.js`: `node_modules/@bermuda/wdk-wallet-evm-bermuda` → `../..`). Running
+  `bare` here by hand needs that link too; `npm run test:bare` creates it.
+- **Bare exits with code 0 once its event loop runs dry**, finished or not. Every Bare test
+  prints a completion marker last and its runner checks for it: never trust the exit code alone.
+- **The first loader wins.** Bare caches each module with the import map it was first loaded
+  with, and preloads literal import specifiers. Scripts run under Bare import the package
+  first and reach `@bermuda/sdk` or `@aztec/bb.js` only afterwards, through a specifier built
+  at runtime; imported directly, those would be cached without the shims.
+- **The prover's CRS stays out of `~/.bb-crs`.** The Bare tests set `CRS_PATH` to
+  `node_modules/.cache/bb-crs`, which CI caches.
+- **The packed check installs with `--allow-remote=all`.** To its scratch project,
+  `@bermuda/sdk` is a transitive URL dependency, which npm 12 refuses by default.
+  `tests/bare/run.js` uses the npm that runs it, not whichever comes first on the `PATH`.

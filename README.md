@@ -188,10 +188,12 @@ The package runs on Node.js and on [Bare](https://github.com/holepunchto/bare). 
 - `@aztec/bb.js` imports `finished` from `stream/promises` and `threadId` from `worker_threads`, which `bare-node-runtime` does not provide. The modules in [`bare/`](bare/) add them.
 - Two globals are patched, for the whole process. `TextDecoder` also accepts the labels of the `windows-1252` encoding, such as `ascii`, which `@aztec/bb.js` decodes the prover's output with. `WebAssembly.compile()` and `WebAssembly.instantiate()` keep Bare's event loop alive until they settle: Bare would otherwise exit while the prover is still being compiled.
 
-Tested with Bare 1.34.0 on macOS (arm64) and, in CI, on Linux (x64):
+Tested with Bare 1.34.0 on macOS (arm64):
 
 - `npm run test:bare` loads the package under Node.js and Bare, from the checkout and from the packed tarball, derives EVM and Bermuda accounts against pinned vectors, and starts the prover.
 - The integration suite deposits, transfers and withdraws from a Bare process, with real proofs, against a fork of Plasma testnet (`tests/integration/bare.test.js`).
+
+CI runs both on Linux (x64).
 
 Under Bare, keep in mind:
 

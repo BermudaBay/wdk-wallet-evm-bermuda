@@ -21,6 +21,13 @@
   "main": "index.js",
   "type": "module",
   "types": "./types",
+  "files": [
+    "index.js",
+    "bare.js",
+    "bare/",
+    "src/",
+    "types/"
+  ],
   "devEngines": {
     "runtime": {
       "name": "node",

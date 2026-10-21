@@ -100,7 +100,7 @@ load-bearing and easy to break:
   forked history whole to the node it forks from, which caps its span (HTTP 413 for the
   SDK's first scan, from the pool's start block). The SDK only splits a range the node itself
   refuses, which it cannot tell from the error EDR relays.
-- **The suites turn the deployment's indexer off** (`bermuda: { chainState: undefined }`). It
+- **The suites turn the deployment's indexer off** (`bermuda: { indexer: undefined }`). It
   serves the live chain, which the fork does not match after the fork block.
 - **The suites wait out the SDK's read reuse** (`settle()`). The SDK reads through a pool of
   RPC nodes that reuses a read, the chain's head among them, for up to a block time (1 s on
@@ -139,6 +139,12 @@ load-bearing and easy to break:
   → `bare-http1`) and `bare-fetch` load: both packages are dependencies pinned to the
   versions `bare-node-runtime` resolves, so npm keeps one copy of each. Move the pins with
   `bare-node-runtime`. `tests/bare/smoke.js` checks it against an RPC node answering in 5.5 s.
+- **The Bare binary is pinned through `bare-runtime`, not `bare`.** `bare` is only the CLI
+  wrapper and takes the runtime as an optional peer (`*`), so bumping it alone leaves the
+  lockfile on the runtime it first resolved. Both are devDependencies: move them together and
+  check `node_modules/.bin/bare --version`. The packed check installs without a lockfile, so the
+  Bare packages the package depends on float there, and their `engines` may outgrow the pinned
+  runtime (`bare-module` 7.5.0 asks for Bare >= 1.35.0).
 - **The prover's CRS stays out of `~/.bb-crs`.** The Bare tests set `CRS_PATH` to
   `node_modules/.cache/bb-crs`, which CI caches.
 - **The packed check installs with `--allow-remote=all`.** To its scratch project,

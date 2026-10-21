@@ -56,12 +56,12 @@ export function forkUrl () {
  *
  * Pinned rather than floating so runs are deterministic and EDR can serve the
  * chain from its local fork cache instead of re-fetching state every run. It
- * follows the deployment the installed SDK targets (from block 36,122,215, set up
- * by block 36,122,316), whose pool holds no commitment yet at this block.
+ * follows the deployment the installed SDK targets (from block 36,671,423, set up
+ * by block 36,671,517), whose pool holds no commitment yet at this block.
  *
  * @type {number}
  */
-export const FORK_BLOCK_NUMBER = 36_136_000
+export const FORK_BLOCK_NUMBER = 36_685_000
 
 /**
  * The `network.create()` override that produces the fork.

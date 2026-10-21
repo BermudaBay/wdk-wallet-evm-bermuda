@@ -39,7 +39,7 @@ describe('utxo cache persistence', () => {
     const wallet = new WalletManagerBermuda(SEED_PHRASE, {
       provider: fork.url,
       fs,
-      bermuda: { chainState: undefined },
+      bermuda: { indexer: undefined },
       ...config
     })
 

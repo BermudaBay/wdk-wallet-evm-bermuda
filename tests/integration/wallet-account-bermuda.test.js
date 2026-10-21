@@ -87,7 +87,7 @@ describe('WalletAccountBermuda against a plasma-testnet fork', () => {
         // The deployment's indexer serves the live chain, whose commitments after
         // the fork block the forked pool does not hold. The SDK would notice and
         // read the fork instead; reading only the fork keeps every run alike.
-        chainState: undefined
+        indexer: undefined
       }
     })
 

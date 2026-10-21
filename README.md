@@ -153,7 +153,7 @@ The SDK reuses what it reads from the chain for up to a block time, so a balance
 The pool pulls each deposit from the master Ethereum account: the amount, and the deposit fees on top of it (the pool's protocol fee and the compliance engine's one-off lifetime fee, if they are charged). USDT0 does not support EIP-2612 permits, so the pool needs an allowance that covers both before a deposit: approve it with the master Ethereum account, and wait for the approval to be mined. The wrapped native token (WXPL) is approved automatically, for exactly what the deposit pulls.
 
 ```javascript
-const BERMUDA_POOL = '0x5D4948111Ba7f37A8f67141E6B7d0EC27B7d4310' // Bermuda pool on Plasma testnet
+const BERMUDA_POOL = '0xa1F6bB903B994d4eeBE77867947EaE422D2D34DB' // Bermuda pool on Plasma testnet
 
 const ethereumAccount = await wallet.getAccount(0)
 
@@ -232,9 +232,9 @@ Shielded transfers and withdrawals are submitted by a relayer, so **neither cap 
 
 | Network | Chain ID | Public RPC | USDT0 | Bermuda pool |
 |---------|----------|------------|-------|--------------|
-| Plasma testnet | 9746 | `https://testnet-rpc.plasma.to` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0x5D4948111Ba7f37A8f67141E6B7d0EC27B7d4310` |
+| Plasma testnet | 9746 | `https://testnet-rpc.plasma.to` | `0x502012b361AebCE43b26Ec812B74D9a51dB4D412` | `0xa1F6bB903B994d4eeBE77867947EaE422D2D34DB` |
 
-The package targets the deployment of version 0.3.2 of the Bermuda SDK.
+The package targets the deployment of version 0.3.3 of the Bermuda SDK.
 
 ## 🖥️ Supported Runtimes
 
@@ -244,7 +244,7 @@ The package runs on Node.js and on [Bare](https://github.com/holepunchto/bare). 
 - Two globals are patched, for the whole process. `TextDecoder` also accepts the labels of the `windows-1252` encoding, such as `ascii`, which `@aztec/bb.js` decodes the prover's output with. `WebAssembly.compile()` and `WebAssembly.instantiate()` keep Bare's event loop alive until they settle: Bare would otherwise exit while the prover is still being compiled.
 - The global HTTP agents of `bare-http1` and `bare-https` are replaced, for the whole process, with ones without their 5-second socket timeout. It cuts off requests in flight, where Node.js only times out idle sockets, so the wallet's requests failed whenever an RPC node took longer than that to answer.
 
-Tested with Bare 1.34.0 on macOS (arm64):
+Tested with Bare 1.35.0 on macOS (arm64):
 
 - `npm run test:bare` loads the package under Node.js and Bare, from the checkout and from the packed tarball, derives EVM and Bermuda accounts against pinned vectors, and starts the prover.
 - The integration suite deposits, transfers and withdraws from a Bare process, with real proofs, against a fork of Plasma testnet (`tests/integration/bare.test.js`).
@@ -257,6 +257,14 @@ Under Bare, keep in mind:
 - On first use, the prover downloads its CRS (about 38 MB, 105 MB once unpacked) into `~/.bb-crs`, or into the directory set in `CRS_PATH`.
 - Import `@bermuda/wdk-wallet-evm-bermuda` before anything else that loads `@bermuda/sdk` or `@aztec/bb.js`. Bare caches each module with the import map it was first loaded with, so modules loaded earlier would miss the fixes above.
 - WDK worklet bundles are not supported yet. A bundle builds, but fails to load: the Bermuda SDK loads its prover's dependencies up front, and those read their WebAssembly modules from disk as they load, which a bundle does not allow.
+
+## ⬆️ Upgrading from 0.3.2
+
+Version 0.3.3 works with version 0.3.3 of the Bermuda SDK, which targets a new deployment of the Bermuda pool:
+
+- **Shielded balances do not carry over.** Funds shielded with 0.3.2 stay in the previous pool (`0x5D4948111Ba7f37A8f67141E6B7d0EC27B7d4310` on Plasma testnet): withdraw them with 0.3.2 first.
+- **Bermuda addresses change.** They keep their owner commitment, but the X-Wing viewing key that follows it is derived differently. Share the new addresses: an account cannot read payments sealed to its viewing key from 0.3.2.
+- **The `chainState` option of the Bermuda SDK is now `indexer`**, should you pass it in the `bermuda` option.
 
 ## ⬆️ Upgrading from 0.1.x
 

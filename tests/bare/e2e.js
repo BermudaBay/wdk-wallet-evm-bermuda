@@ -23,7 +23,7 @@ const { rpcUrl, relayerUrl, seedPhrase, recipient } = JSON.parse(Bare.argv.at(-1
 // the fork rather than the deployment's indexer.
 const wallet = new WalletManagerBermuda(seedPhrase, {
   provider: rpcUrl,
-  bermuda: { relayer: relayerUrl, chainState: undefined }
+  bermuda: { relayer: relayerUrl, indexer: undefined }
 })
 
 const account = await wallet.getBermudaAccount(0, 0)

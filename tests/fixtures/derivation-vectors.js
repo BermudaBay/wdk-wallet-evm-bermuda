@@ -3,11 +3,14 @@
 // accounts holding their shielded funds.
 //
 // The spending keys were captured from the implementation at 59c37c9 and must
-// never change. The addresses they lead were captured again, once, for
+// never change. The addresses they lead were captured again for
 // @bermuda/sdk v0.3.2, whose address format dropped the spending public key,
 // the recovery hash, the x25519 viewing key and the randomized address-binding
 // signature for an owner commitment and an X-Wing viewing key, both derived
-// from the spending key. They must not change again either.
+// from the spending key. Their hashes were captured once more for v0.3.3,
+// which derives the X-Wing viewing key from the spending key without the
+// Curve25519 clamp; the owner commitments stayed the same. A change to either
+// changes every user's Bermuda address.
 //
 // Shared by tests/derivation-vectors.test.js and tests/bare/smoke.js, so that
 // Node.js and Bare are held to the very same values.
@@ -43,9 +46,9 @@ export const BERMUDA_SPENDING_KEYS = [
 // the keccak256 hash of the whole address (2,498 characters), which the
 // 1,216-byte X-Wing key following the commitment would make unwieldy here.
 export const BERMUDA_ADDRESSES = [
-  [0, 0, '0x2c78e56b60703e4d0ac5350cb4fc15013e9ad005ae36e15a2fb2ecebc17c6681', '0x1607df98ba45c3cd5a96b3116e7149e08d48cb650720f6be2a9ac63768bf6466'],
-  [0, 1, '0x112a2569ba56e96f6e47747d65520d3dcd3cbfaa7ca59565e5344b1094e12cb5', '0x605cf443785c6a8cb6a362a0b624b36c76388debab50da92dbd93487b2937570'],
-  [1, 0, '0x03be53fe5200a0690e7c7b49e4a745e695dce71929a81a94315e2685634f4863', '0xdef253ca4bb2d1b8f0d1b602754dc631c7d949383d1b3d6db3cb5b4f7d5cd692']
+  [0, 0, '0x2c78e56b60703e4d0ac5350cb4fc15013e9ad005ae36e15a2fb2ecebc17c6681', '0x665841ece51d06c5bc33ca916604aad3f8b5db56c030b340829cef6e91914e2a'],
+  [0, 1, '0x112a2569ba56e96f6e47747d65520d3dcd3cbfaa7ca59565e5344b1094e12cb5', '0x642e60afcba2f392a98bc976a0482de3a0b42995358f992cd3e0485b42aed063'],
+  [1, 0, '0x03be53fe5200a0690e7c7b49e4a745e695dce71929a81a94315e2685634f4863', '0xa3fc9f5d8e34122cf03e92fdda903782309ac9943c9c4703dbe01a7ba8d98de3']
 ]
 
 /**
